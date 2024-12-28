@@ -1,10 +1,15 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/category.dart';
 import 'package:shopping_list/models/grocery_item.dart';
+
+final _firestore = FirebaseFirestore.instance;
+final _fireauth = FirebaseAuth.instance;
 
 class NewItem extends StatefulWidget {
   const NewItem({super.key});
@@ -26,40 +31,26 @@ class _NewItemState extends State<NewItem> {
         _isSening = true;
       });
       _formKey.currentState!.save();
-      final uri = Uri.https(
-          'flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app',
-          'shopping-list.json');
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(
-          {
-            'name': _enteredName,
-            'quantity': _enteredQuantity,
-            'category': _selectedCategory.name,
-          },
-        ),
-      );
+      final newItem = {
+        'name': _enteredName,
+        'quantity': _enteredQuantity,
+        'category': _selectedCategory.name,
+      };
+
+      final data = await _firestore
+        .collection("user_shopping_list")
+        .doc(_fireauth.currentUser!.uid)
+        .collection("items")
+        .add(newItem);
 
       if (!context.mounted) {
         return;
       }
-      Map<String, dynamic> idNewItem = json.decode(response.body);
-      _sendDataToMainScreen(idNewItem.values.first);
-    }
-  }
 
-  void _sendDataToMainScreen(String id) {
-    Navigator.of(context).pop(
-      GroceryItem(
-        id: id,
-        name: _enteredName,
-        quantity: _enteredQuantity,
-        category: _selectedCategory,
-      ),
-    );
+      Navigator.of(context).pop(
+        "GG"
+      );  
+    }
   }
 
   @override

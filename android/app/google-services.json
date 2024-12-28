@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "379037253780",
+    "firebase_url": "https://flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "flutter-prep-3c03b",
+    "storage_bucket": "flutter-prep-3c03b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379037253780:android:78bb7dac7a7ee58bfc7481",
+        "android_client_info": {
+          "package_name": "com.example.shopping_list"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDSF0_iujlOc5voxDZ9Z2xX7RQVDDW11w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

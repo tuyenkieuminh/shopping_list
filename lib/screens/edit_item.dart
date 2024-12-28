@@ -1,11 +1,16 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/category.dart';
 import 'package:shopping_list/models/grocery_item.dart';
 import 'package:http/http.dart' as http;
+
+final _firestore = FirebaseFirestore.instance;
+final _fireauth = FirebaseAuth.instance;
 
 class EditItem extends StatefulWidget {
   const EditItem({super.key,required this.groceryItem});
@@ -29,40 +34,27 @@ class _EditItemState extends State<EditItem> {
         _isSening = true;
       });
       _formKey.currentState!.save();
-      final url = Uri.https(
-          'flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app',
-          'shopping-list/${id}.json');
-      Response? response;
-      response = await http.patch(
-          url,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: json.encode(
-            {
-              'name': _enteredName,
-              'quantity': _enteredQuantity,
-              'category': _selectedCategory.name,
-            },
-          ), // Encode the data as JSON
-        );
-      
-      if (!context.mounted) {
-          return;
-        }
-      _sendDataToMainScreen(id);
-    }
-  }
+      final newItem = {
+        'name': _enteredName,
+        'quantity': _enteredQuantity,
+        'category': _selectedCategory.name,
+      };
 
-  void _sendDataToMainScreen(String id) {
-    Navigator.of(context).pop(
-      GroceryItem(
-        id: id,
-        name: _enteredName,
-        quantity: _enteredQuantity,
-        category: _selectedCategory,
-      ),
-    );
+      final data = await _firestore
+        .collection("user_shopping_list")
+        .doc(_fireauth.currentUser!.uid)
+        .collection("items")
+        .doc(widget.groceryItem.id)
+        .update(newItem);
+
+      if (!context.mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(
+        "GG"
+      );  
+    }
   }
 
   @override

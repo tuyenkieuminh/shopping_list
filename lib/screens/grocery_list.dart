@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
@@ -8,6 +10,9 @@ import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/grocery_item.dart';
 import 'package:shopping_list/screens/edit_item.dart';
 import 'package:shopping_list/screens/new_item.dart';
+
+final _firestore = FirebaseFirestore.instance;
+final _fireauth = FirebaseAuth.instance;
 
 class GroceryList extends StatefulWidget {
   const GroceryList({super.key});
@@ -29,29 +34,37 @@ class _GroceryListState extends State<GroceryList> {
   }
 
   Future<List<GroceryItem>> _loadItem() async {
-    final url = Uri.https(
-        'flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app',
-        'shopping-list.json');
+    final data = await _firestore
+        .collection("user_shopping_list")
+        .doc(_fireauth.currentUser!.uid)
+        .collection("items")
+        .get();
+    // final url = Uri.https(
+    //     'flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app',
+    //     'shopping-list.json');
 
-    final response = await http.get(url);
-    if (response.body == 'null') {
+    // final response = await http.get(url);
+    // if (response.body == 'null') {
+    //   return [];
+    // }
+
+    // if (response.statusCode >= 400) {
+    //   throw Exception('Fail to fetch data. Please try again later.');
+    // }
+
+    if (data.size == 0) {
       return [];
     }
 
-    if (response.statusCode >= 400) {
-      throw Exception('Fail to fetch data. Please try again later.');
-    }
-
-    final Map<String, dynamic> listData = json.decode(response.body);
     final List<GroceryItem> loadedItems = [];
-    for (var item in listData.entries) {
-      var category = categories.entries.firstWhere(
-          (element) => item.value['category'] == element.value.name);
+    for (var item in data.docs) {
+      var category = categories.entries
+          .firstWhere((element) => item['category'] == element.value.name);
       loadedItems.add(
         GroceryItem(
-          id: item.key,
-          name: item.value['name'],
-          quantity: item.value['quantity'],
+          id: item.id,
+          name: item['name'],
+          quantity: item['quantity'],
           category: category.value,
         ),
       );
@@ -59,34 +72,25 @@ class _GroceryListState extends State<GroceryList> {
     return loadedItems;
   }
 
-  // void _addItem(GroceryItem? newGroceryItem) {
-  //   if (newGroceryItem != null) {
-  //     setState(() {
-  //       _groceryItems.add(newGroceryItem);
-  //     });
-  //   }
-  // }
-
   void _navigateToNewItemScreen() async {
-    final newGroceryItem = await Navigator.of(context).push<GroceryItem>(
+    final newGroceryItem = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (ctx) => const NewItem(),
       ),
     );
 
-    //_loadItem();
-    //_addItem(newGroceryItem);
     setState(() {
       _loadedItems = _loadItem();
     });
   }
 
   void _deleteItem(GroceryItem newGroceryItem) async {
-    final url = Uri.https(
-        'flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app',
-        'shopping-list/${newGroceryItem.id}.json');
-    Response? response;
-    response = await http.delete(url);
+    await _firestore
+        .collection("user_shopping_list")
+        .doc(_fireauth.currentUser!.uid)
+        .collection("items")
+        .doc(newGroceryItem.id)
+        .delete();
 
     setState(() {
       _loadedItems = _loadItem();
@@ -94,38 +98,33 @@ class _GroceryListState extends State<GroceryList> {
   }
 
   void _editItem(GroceryItem groceryItem) async {
-    final url = Uri.https(
-        'flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app',
-        'shopping-list/${groceryItem.id}.json');
-    Response? response;
-    response = await http.patch(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(
-          {
-            'name': groceryItem.name,
-            'quantity': groceryItem.quantity,
-            'category': groceryItem.category,
-          },
-        ), // Encode the data as JSON
-      );
-    
+    final updateItem = {
+      'name': groceryItem.name,
+      'quantity': groceryItem.quantity,
+      'category': groceryItem.category,
+    };
+
+    await _firestore
+        .collection("user_shopping_list")
+        .doc(_fireauth.currentUser!.uid)
+        .collection("items")
+        .doc(groceryItem.id)
+        .update(updateItem);
+
     setState(() {
       _loadedItems = _loadItem();
     });
   }
 
   void _navigateToEditItemScreen(GroceryItem grocery_item) async {
-    await Navigator.of(context).push<GroceryItem>(
+    await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (ctx) => EditItem(groceryItem: grocery_item,),
+        builder: (ctx) => EditItem(
+          groceryItem: grocery_item,
+        ),
       ),
     );
 
-    //_loadItem();
-    //_addItem(newGroceryItem);
     setState(() {
       _loadedItems = _loadItem();
     });
@@ -139,9 +138,9 @@ class _GroceryListState extends State<GroceryList> {
         actions: [
           IconButton(
             onPressed: () {
-              _navigateToNewItemScreen();
+              _fireauth.signOut();
             },
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.logout),
           ),
         ],
       ),
@@ -206,6 +205,12 @@ class _GroceryListState extends State<GroceryList> {
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _navigateToNewItemScreen();
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
