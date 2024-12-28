@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -22,16 +20,10 @@ class GroceryList extends StatefulWidget {
 }
 
 class _GroceryListState extends State<GroceryList> {
-  List<GroceryItem> _groceryItems = [];
-  late Future<List<GroceryItem>> _loadedItems;
-  String? _isError;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _loadedItems = _loadItem();
-  }
+  final Stream<QuerySnapshot> _itemStream =
+      _firestore.collection("user_shopping_list")
+        .doc(_fireauth.currentUser!.uid)
+        .collection("items").snapshots();
 
   Future<List<GroceryItem>> _loadItem() async {
     final data = await _firestore
@@ -39,18 +31,6 @@ class _GroceryListState extends State<GroceryList> {
         .doc(_fireauth.currentUser!.uid)
         .collection("items")
         .get();
-    // final url = Uri.https(
-    //     'flutter-prep-3c03b-default-rtdb.asia-southeast1.firebasedatabase.app',
-    //     'shopping-list.json');
-
-    // final response = await http.get(url);
-    // if (response.body == 'null') {
-    //   return [];
-    // }
-
-    // if (response.statusCode >= 400) {
-    //   throw Exception('Fail to fetch data. Please try again later.');
-    // }
 
     if (data.size == 0) {
       return [];
@@ -73,28 +53,20 @@ class _GroceryListState extends State<GroceryList> {
   }
 
   void _navigateToNewItemScreen() async {
-    final newGroceryItem = await Navigator.of(context).push<String>(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (ctx) => const NewItem(),
       ),
     );
-
-    setState(() {
-      _loadedItems = _loadItem();
-    });
   }
 
-  void _deleteItem(GroceryItem newGroceryItem) async {
+  void _deleteItem(String id) async {
     await _firestore
         .collection("user_shopping_list")
         .doc(_fireauth.currentUser!.uid)
         .collection("items")
-        .doc(newGroceryItem.id)
+        .doc(id)
         .delete();
-
-    setState(() {
-      _loadedItems = _loadItem();
-    });
   }
 
   void _editItem(GroceryItem groceryItem) async {
@@ -110,24 +82,16 @@ class _GroceryListState extends State<GroceryList> {
         .collection("items")
         .doc(groceryItem.id)
         .update(updateItem);
-
-    setState(() {
-      _loadedItems = _loadItem();
-    });
   }
 
   void _navigateToEditItemScreen(GroceryItem grocery_item) async {
-    await Navigator.of(context).push<String>(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (ctx) => EditItem(
           groceryItem: grocery_item,
         ),
       ),
     );
-
-    setState(() {
-      _loadedItems = _loadItem();
-    });
   }
 
   @override
@@ -144,9 +108,9 @@ class _GroceryListState extends State<GroceryList> {
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: _loadedItems,
-        builder: (context, snapshot) {
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _itemStream,
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -161,48 +125,53 @@ class _GroceryListState extends State<GroceryList> {
             );
           }
 
-          if (snapshot.data!.isEmpty) {
+          if (snapshot.data!.size == 0) {
             return const Center(
               child: Text("You have no item yet"),
             );
           }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                child: Dismissible(
-                  direction: DismissDirection.endToStart,
-                  onDismissed: (direction) {
-                    _deleteItem(snapshot.data![index]);
-                  },
-                  key: UniqueKey(),
-                  background: Container(
-                    color: Colors.red,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(Icons.delete),
-                        ],
+          return ListView(
+            children: snapshot.data!.docs.map(
+              (DocumentSnapshot document) {
+                Map<String, dynamic> data =
+                    document.data()! as Map<String, dynamic>;
+                final category = categories.entries
+                  .firstWhere((element) => data['category'] == element.value.name);
+                return GestureDetector(
+                  child: Dismissible(
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      _deleteItem(document.id);
+                    },
+                    key: UniqueKey(),
+                    background: Container(
+                      color: Colors.red,
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 15),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(Icons.delete),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.square,
-                      color: snapshot.data![index].category.color,
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.square,
+                        color: category.value.color,
+                      ),
+                      title: Text(data['name']),
+                      trailing: Text(data['quantity'].toString()),
                     ),
-                    title: Text(snapshot.data![index].name),
-                    trailing: Text(snapshot.data![index].quantity.toString()),
                   ),
-                ),
-                onTap: () {
-                  _navigateToEditItemScreen(snapshot.data![index]);
-                },
-              );
-            },
+                  onTap: () {
+                    _navigateToEditItemScreen(GroceryItem(id: document.id, name: data['name'], quantity: data['quantity'], category: category.value));
+                  },
+                );
+              } 
+            ).toList().cast(),
           );
         },
       ),

@@ -51,9 +51,7 @@ class _EditItemState extends State<EditItem> {
         return;
       }
 
-      Navigator.of(context).pop(
-        "GG"
-      );  
+      Navigator.of(context).pop();  
     }
   }
 
@@ -137,6 +135,9 @@ class _EditItemState extends State<EditItem> {
                           ),
                         ),
                       ],
+                      onSaved: (newValue) {
+                        _selectedCategory = newValue!;
+                      },
                       onChanged: (value) {
                         setState(() {
                           _selectedCategory = value!;

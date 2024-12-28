@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/category.dart';
-import 'package:shopping_list/models/grocery_item.dart';
 
 final _firestore = FirebaseFirestore.instance;
 final _fireauth = FirebaseAuth.instance;
@@ -47,9 +45,7 @@ class _NewItemState extends State<NewItem> {
         return;
       }
 
-      Navigator.of(context).pop(
-        "GG"
-      );  
+      Navigator.of(context).pop();  
     }
   }
 
