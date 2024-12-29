@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shopping_list/screens/auth/auth_view_model.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -9,13 +10,13 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _fireauth = FirebaseAuth.instance;
+  final AuthViewModel _authViewModel = AuthViewModel();
   var _enteredEmail = '';
   var _enteredPassword = '';
   var isLogin = true;
   final _formKey = GlobalKey<FormState>();
 
-  void _submit() {
+  void _submit() async {
     final isValid = _formKey.currentState!.validate();
 
     if (!isValid) {
@@ -23,22 +24,33 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     _formKey.currentState!.save();
-
     try {
-      if (isLogin) {
-        _fireauth.signInWithEmailAndPassword(
-            email: _enteredEmail, password: _enteredPassword);
-      } else {
-        _fireauth.createUserWithEmailAndPassword(
-            email: _enteredEmail, password: _enteredPassword);
-      }
+      await _authViewModel.authenticate(
+        email: _enteredEmail,
+        password: _enteredPassword,
+        isLogin: isLogin,
+      );
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).clearSnackBars();
-      e.message != null
-          ? ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.message!)))
-          : null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Authentication failed')),
+      );
     }
+    // try {
+    //   if (isLogin) {
+    //     _fireauth.signInWithEmailAndPassword(
+    //         email: _enteredEmail, password: _enteredPassword);
+    //   } else {
+    //     _fireauth.createUserWithEmailAndPassword(
+    //         email: _enteredEmail, password: _enteredPassword);
+    //   }
+    // } on FirebaseAuthException catch (e) {
+    //   ScaffoldMessenger.of(context).clearSnackBars();
+    //   e.message != null
+    //       ? ScaffoldMessenger.of(context)
+    //           .showSnackBar(SnackBar(content: Text(e.message!)))
+    //       : null;
+    // }
   }
 
   @override

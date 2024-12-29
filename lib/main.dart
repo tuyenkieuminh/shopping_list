@@ -2,10 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:shopping_list/firebase_options.dart';
-import 'package:shopping_list/screens/auth.dart';
+import 'package:shopping_list/screens/auth/auth.dart';
 import 'package:shopping_list/screens/splash.dart';
 import 'package:shopping_list/themes/dark_theme.dart';
-import 'package:shopping_list/screens/grocery_list.dart';
+import 'package:shopping_list/screens/grocery_list/grocery_list.dart';
 
 final _fireauth = FirebaseAuth.instance;
 void main() async {

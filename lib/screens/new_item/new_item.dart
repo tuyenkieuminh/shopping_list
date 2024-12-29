@@ -2,9 +2,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/category.dart';
+import 'package:shopping_list/screens/new_item/new_item_view_model.dart';
 
 final _firestore = FirebaseFirestore.instance;
 final _fireauth = FirebaseAuth.instance;
@@ -17,6 +17,7 @@ class NewItem extends StatefulWidget {
 }
 
 class _NewItemState extends State<NewItem> {
+  final NewItemViewModel _viewModel = NewItemViewModel();
   final _formKey = GlobalKey<FormState>();
   var _enteredName = '';
   var _enteredQuantity = 1;
@@ -29,21 +30,8 @@ class _NewItemState extends State<NewItem> {
         _isSening = true;
       });
       _formKey.currentState!.save();
-      final newItem = {
-        'name': _enteredName,
-        'quantity': _enteredQuantity,
-        'category': _selectedCategory.name,
-      };
 
-      final data = await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .add(newItem);
-
-      if (!context.mounted) {
-        return;
-      }
+      await _viewModel.saveItem(_enteredName, _enteredQuantity, _selectedCategory);
 
       Navigator.of(context).pop();  
     }

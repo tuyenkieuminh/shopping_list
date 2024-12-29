@@ -1,13 +1,11 @@
-import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
 import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/grocery_item.dart';
-import 'package:shopping_list/screens/edit_item.dart';
-import 'package:shopping_list/screens/new_item.dart';
+import 'package:shopping_list/screens/edit_item/edit_item.dart';
+import 'package:shopping_list/screens/grocery_list/grocery_list_view_model.dart';
+import 'package:shopping_list/screens/new_item/new_item.dart';
 
 final _firestore = FirebaseFirestore.instance;
 final _fireauth = FirebaseAuth.instance;
@@ -20,37 +18,34 @@ class GroceryList extends StatefulWidget {
 }
 
 class _GroceryListState extends State<GroceryList> {
-  final Stream<QuerySnapshot> _itemStream =
-      _firestore.collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items").snapshots();
+  final GroceryListViewModel _viewModel = GroceryListViewModel();
 
-  Future<List<GroceryItem>> _loadItem() async {
-    final data = await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .get();
+  // Future<List<GroceryItem>> _loadItem() async {
+  //   final data = await _firestore
+  //       .collection("user_shopping_list")
+  //       .doc(_fireauth.currentUser!.uid)
+  //       .collection("items")
+  //       .get();
 
-    if (data.size == 0) {
-      return [];
-    }
+  //   if (data.size == 0) {
+  //     return [];
+  //   }
 
-    final List<GroceryItem> loadedItems = [];
-    for (var item in data.docs) {
-      var category = categories.entries
-          .firstWhere((element) => item['category'] == element.value.name);
-      loadedItems.add(
-        GroceryItem(
-          id: item.id,
-          name: item['name'],
-          quantity: item['quantity'],
-          category: category.value,
-        ),
-      );
-    }
-    return loadedItems;
-  }
+  //   final List<GroceryItem> loadedItems = [];
+  //   for (var item in data.docs) {
+  //     var category = categories.entries
+  //         .firstWhere((element) => item['category'] == element.value.name);
+  //     loadedItems.add(
+  //       GroceryItem(
+  //         id: item.id,
+  //         name: item['name'],
+  //         quantity: item['quantity'],
+  //         category: category.value,
+  //       ),
+  //     );
+  //   }
+  //   return loadedItems;
+  // }
 
   void _navigateToNewItemScreen() async {
     Navigator.of(context).push(
@@ -61,27 +56,7 @@ class _GroceryListState extends State<GroceryList> {
   }
 
   void _deleteItem(String id) async {
-    await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .doc(id)
-        .delete();
-  }
-
-  void _editItem(GroceryItem groceryItem) async {
-    final updateItem = {
-      'name': groceryItem.name,
-      'quantity': groceryItem.quantity,
-      'category': groceryItem.category,
-    };
-
-    await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .doc(groceryItem.id)
-        .update(updateItem);
+    await _viewModel.deleteItem(id);
   }
 
   void _navigateToEditItemScreen(GroceryItem grocery_item) async {
@@ -102,14 +77,14 @@ class _GroceryListState extends State<GroceryList> {
         actions: [
           IconButton(
             onPressed: () {
-              _fireauth.signOut();
+              _viewModel.signOut();
             },
             icon: const Icon(Icons.logout),
           ),
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _itemStream,
+        stream: _viewModel.itemStream,
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(

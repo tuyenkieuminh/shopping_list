@@ -1,13 +1,10 @@
-import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/category.dart';
 import 'package:shopping_list/models/grocery_item.dart';
-import 'package:http/http.dart' as http;
+import 'package:shopping_list/screens/edit_item/edit_item_view_model.dart';
 
 final _firestore = FirebaseFirestore.instance;
 final _fireauth = FirebaseAuth.instance;
@@ -22,6 +19,7 @@ class EditItem extends StatefulWidget {
 }
 
 class _EditItemState extends State<EditItem> {
+  final EditItemViewModel _viewModel = EditItemViewModel();
   final _formKey = GlobalKey<FormState>();
   var _enteredName = '';
   var _enteredQuantity = 1;
@@ -34,18 +32,8 @@ class _EditItemState extends State<EditItem> {
         _isSening = true;
       });
       _formKey.currentState!.save();
-      final newItem = {
-        'name': _enteredName,
-        'quantity': _enteredQuantity,
-        'category': _selectedCategory.name,
-      };
-
-      final data = await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .doc(widget.groceryItem.id)
-        .update(newItem);
+      
+      await _viewModel.editItem(_enteredName, _enteredQuantity, _selectedCategory, id);
 
       if (!context.mounted) {
         return;
