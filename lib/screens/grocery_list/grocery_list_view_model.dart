@@ -1,55 +1,19 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shopping_list/models/grocery_item.dart';
+import 'package:shopping_list/service/firebase_service.dart';
 
 class GroceryListViewModel {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _fireauth = FirebaseAuth.instance;
+  final FirebaseService _firebaseService = FirebaseService();
 
   Stream<QuerySnapshot> get itemStream {
-    return _firestore.collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items").snapshots();
+    return _firebaseService.itemStream;
   }
 
-  Future<void> deleteItem(String id) async {
-    await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .doc(id)
-        .delete();
+  Future<String?> deleteItem(String id) async {
+    return await _firebaseService.deleteItem(id);
   }
 
-  Future<void> updateItem(GroceryItem groceryItem) async {
-    final updateData = {
-      'name': groceryItem.name,
-      'quantity': groceryItem.quantity,
-      'category': groceryItem.category,
-    };
-
-    await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .doc(groceryItem.id)
-        .update(updateData);
-  }
-
-  Future<void> signOut() async {
-    await _fireauth.signOut();
-  }
-
-  Future<void> addItem(GroceryItem groceryItem) async {
-    await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .add({
-      'name': groceryItem.name,
-      'quantity': groceryItem.quantity,
-      'category': groceryItem.category,
-    });
+  Future<String?> signOut() async {
+    return await _firebaseService.signOut();
   }
 }

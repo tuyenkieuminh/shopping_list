@@ -1,24 +1,11 @@
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shopping_list/models/category.dart';
+import 'package:shopping_list/service/firebase_service.dart';
 
 class EditItemViewModel {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _fireauth = FirebaseAuth.instance;
+  final FirebaseService _firebaseService = FirebaseService();
 
-  Future<void> editItem(String _enteredName, int _enteredQuantity, Category _selectedCategory, String id) async {
-    final newItem = {
-        'name': _enteredName,
-        'quantity': _enteredQuantity,
-        'category': _selectedCategory.name,
-      };
-
-      await _firestore
-        .collection("user_shopping_list")
-        .doc(_fireauth.currentUser!.uid)
-        .collection("items")
-        .doc(id)
-        .update(newItem);
+  Future<String?> editItem(String _enteredName, int _enteredQuantity, Category _selectedCategory, String id) async {
+    return await _firebaseService.updateItem(_enteredName, _enteredQuantity, _selectedCategory, id);
   }
 }

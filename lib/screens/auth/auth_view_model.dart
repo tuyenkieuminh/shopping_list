@@ -1,27 +1,13 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shopping_list/service/firebase_service.dart';
 
 class AuthViewModel {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseService _firebaseService = FirebaseService();
 
-  Future<UserCredential> authenticate({
-    required String email,
-    required String password,
-    required bool isLogin,
-  }) async {
-    try {
-      if (isLogin) {
-        return await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      } else {
-        return await _auth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      rethrow;
-    }
+  Future<String?> login(String email, String password) async {
+    return await _firebaseService.login(email, password);
+  }
+
+  Future<String?> register(String email, String password) async {
+    return await _firebaseService.register(email, password);
   }
 }

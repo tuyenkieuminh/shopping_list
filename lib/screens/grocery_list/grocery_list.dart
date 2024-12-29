@@ -7,9 +7,6 @@ import 'package:shopping_list/screens/edit_item/edit_item.dart';
 import 'package:shopping_list/screens/grocery_list/grocery_list_view_model.dart';
 import 'package:shopping_list/screens/new_item/new_item.dart';
 
-final _firestore = FirebaseFirestore.instance;
-final _fireauth = FirebaseAuth.instance;
-
 class GroceryList extends StatefulWidget {
   const GroceryList({super.key});
 
